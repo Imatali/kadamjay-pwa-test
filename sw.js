@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'kadamjay-pwa-safe-test-v1116-v2';
+const CACHE_NAME = 'kadamjay-pwa-firebase-v161';
 
 const APP_FILES = [
   './worker.html',
@@ -14,6 +14,7 @@ self.addEventListener('install', event => {
       cache.addAll(APP_FILES)
     )
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
@@ -22,7 +23,7 @@ self.addEventListener('activate', event => {
       Promise.all(
         keys
           .filter(key =>
-           key.startsWith('kadamjay-pwa-safe-test-v1116-') &&
+            key.startsWith('kadamjay-pwa-') &&
             key !== CACHE_NAME
           )
           .map(key => caches.delete(key))
