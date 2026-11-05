@@ -1,140 +1,136 @@
+
 <!DOCTYPE html>
 <html lang="ky">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>ЖДПБ — SAFE TEST</title>
-
-<!-- PWA v1116 -->
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ЖДПБ — TEST AUTH v161</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1d4ed8">
-
-<meta property="og:title" content="Кадамжай ЖДПБ - Кирүү">
-<meta property="og:description" content="Жумушка келүүнү белгилөө">
-<meta property="og:image" content="https://imatali.github.io/gps-tracker/icon.png?v=1010">
-<meta property="og:type" content="website">
 <link rel="icon" href="./pwa-icon-192.png">
 <link rel="apple-touch-icon" href="./pwa-icon-192.png">
-
 <style>
-body {
-  font-family:system-ui,-apple-system,sans-serif;
-  background:#f1f5f9;
-  padding:16px;
-  margin:0;
-}
-.box {
-  background:#fff;
-  max-width:400px;
-  margin:20px auto;
-  padding:20px;
-  border-radius:16px;
-  box-shadow:0 4px 20px #0001;
-}
-input,button {
-  width:100%;
-  padding:14px;
-  margin-top:12px;
-  border-radius:10px;
-  border:1px solid #ddd;
-  font-size:18px;
-  box-sizing:border-box;
-}
-button {
-  background:#1d4ed8;
-  color:#fff;
-  border:0;
-  font-weight:700;
-  cursor:pointer;
-}
-button:disabled {background:#94a3b8}
-button.out {
-  background:#ef4444;
-  display:none;
-  margin-top:16px;
-}
-#log {
-  font-size:13px;
-  background:#f8fafc;
-  padding:10px;
-  border-radius:8px;
-  margin-top:12px;
-  min-height:20px;
-  word-break:break-word;
-}
-.small-link {
-  display:block;
-  text-align:center;
-  margin-top:20px;
-  font-size:13px;
-  color:#64748b;
-  text-decoration:underline;
-  cursor:pointer;
-}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;padding:16px;margin:0}
+.box{background:white;max-width:400px;margin:20px auto;padding:20px;border-radius:16px;box-shadow:0 4px 20px #0001}
+input,button{width:100%;padding:14px;margin-top:12px;border-radius:10px;border:1px solid #ddd;font-size:17px;box-sizing:border-box}
+button{background:#1d4ed8;color:white;border:0;font-weight:700;cursor:pointer}
+button:disabled{background:#94a3b8}
+#log,#authStatus,#scheduleInfo{font-size:13px;padding:12px;margin-top:12px;border-radius:8px;background:#f1f5f9;overflow-wrap:anywhere}
+#outBtn{background:#ef4444;display:none}
 </style>
 </head>
-
 <body>
 <div class="box">
-  <h3 id="title">📍 Жумушка келдим</h3>
-
-  <input id="pin" type="tel" inputmode="numeric"
-         maxlength="4" placeholder="4 орундуу ПИН">
-
-  <button id="btn" onclick="login()">Кирүү</button>
-  <button id="previewBtn" type="button" onclick="previewSchedule()" style="background:#e0e7ff;color:#1e40af">📅 Графикти көрүү</button>
-
-  <div id="log">📅 Графикти GPSсиз көрүүгө болот.</div>
-  <div id="info"></div>
-  <div id="scheduleInfo" style="font-size:13px;background:#eff6ff;border-radius:8px;padding:10px;margin-top:12px;display:none"></div>
-
-  <button id="outBtn" class="out" onclick="leaveWork()">
-    🚪 Жумуштан кеттим
-  </button>
-
-   <div style="font-size:10px;color:#aaa;margin-top:12px;text-align:center">
-    v1116 SAFE PWA DEMO — Firebase/GPS өчүрүлгөн
+  <div style="background:#fef3c7;color:#78350f;padding:12px;border-radius:10px;font-weight:bold">
+    🧪 ТЕСТТИК ВЕРСИЯ — ЧЫНЫГЫ КАТТОО ЖОК
   </div>
+  <h3 id="title">📍 Жумушка келдим</h3>
+  <input id="pin" type="tel" inputmode="numeric" maxlength="4" placeholder="4 орундуу ПИН">
+  <button onclick="login()">Кирүү</button>
+  <button onclick="previewSchedule()" style="background:#e0e7ff;color:#1e40af">📅 Графикти көрүү</button>
+  <div id="log">GPS жана катышуу каттоосу өчүрүлгөн.</div>
+  <button id="outBtn" onclick="leaveWork()">🚪 Жумуштан кеттим</button>
+  <div id="scheduleInfo" hidden></div>
+  <button id="authTestBtn" onclick="testFirebaseAuth()" style="background:#0f766e">
+    🔐 Тесттик Firebase байланышын текшерүү
+  </button>
+  <div id="authStatus" role="status" aria-live="polite">
+    Firebase байланышын текшерүү үчүн баскычты басыңыз.
+  </div>
+  <p style="font-size:11px;color:#64748b;text-align:center">
+    v161 TEST AUTH — Firebase Authentication гана
+  </p>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
-// ISOLATED PWA DEMO ONLY. No Firebase, no GPS, no network requests or attendance writes.
-const logEl = document.getElementById('log');
-const pinInput = document.getElementById('pin');
-const titleEl = document.getElementById('title');
-const outBtn = document.getElementById('outBtn');
-const previewBtn = document.getElementById('previewBtn');
-let demoCheckedIn = false;
-logEl.textContent = '🧪 SAFE TEST: Firebase жана GPS өчүрүлгөн. Чыныгы каттоо жүргүзүлбөйт.';
-document.querySelector('.box').insertAdjacentHTML('afterbegin', '<div style="padding:12px;background:#fef3c7;color:#78350f;border-radius:10px;font-weight:700">🧪 ТЕСТТИК ВЕРСИЯ — ЧЫНЫГЫ КАТТОО ЖОК</div>');
-window.login = function() {
-  if (!/^\d{4}$/.test(pinInput.value.trim())) {
-    alert('Текшерүү үчүн каалаган 4 сан жазыңыз (чыныгы PIN колдонбоңуз).');
+'use strict';
+
+// Тесттик Firebase гана. Production базасы колдонулбайт.
+const firebaseConfig = {
+  apiKey: "AIzaSyAws1PfcVA1AOg1ToquJVs05FBg0kPE1E8",
+  authDomain: "gps-tracker-test-d97dc.firebaseapp.com",
+  databaseURL: "https://gps-tracker-test-d97dc-default-rtdb.firebaseio.com",
+  projectId: "gps-tracker-test-d97dc",
+  storageBucket: "gps-tracker-test-d97dc.firebasestorage.app",
+  messagingSenderId: "894193046205",
+  appId: "1:894193046205:web:6b06231416f0f4eb5f9dd4"
+};
+
+function login() {
+  const pin = document.getElementById('pin').value.trim();
+  if (!/^\d{4}$/.test(pin)) {
+    alert('Каалаган 4 сан киргизиңиз. Чыныгы PIN колдонбоңуз.');
     return;
   }
-  demoCheckedIn = true;
-  titleEl.textContent = '🧪 Тест: жумушка келүү басылды';
-  logEl.textContent = '🧪 SAFE TEST: Чыныгы каттоо жүргүзүлбөйт.';
-  outBtn.style.display = 'block';
-  alert('🧪 SAFE TEST: Чыныгы каттоо жүргүзүлбөйт.');
-};
-window.leaveWork = function() {
-  demoCheckedIn = false;
-  titleEl.textContent = '📍 Жумушка келдим';
-  outBtn.style.display = 'none';
-  logEl.textContent = '🧪 SAFE TEST: Кетүү да катталган жок.';
-};
-window.previewSchedule = function() {
-  document.getElementById('scheduleInfo').style.display = 'block';
-  document.getElementById('scheduleInfo').textContent = '🧪 SAFE TEST: Чыныгы график жүктөлбөйт.';
-};
-</script>
-<!-- PWA: каттоо баракчасы жүктөлгөндөн кийин гана Service Worker катталат. -->
-<script>
+  document.getElementById('title').textContent = '🧪 Тесттик кирүү';
+  document.getElementById('log').textContent =
+    'Тесттик кирүү аткарылды. Катышуу катталган жок.';
+  document.getElementById('outBtn').style.display = 'block';
+}
+
+function leaveWork() {
+  document.getElementById('title').textContent = '📍 Жумушка келдим';
+  document.getElementById('outBtn').style.display = 'none';
+  document.getElementById('log').textContent =
+    'Тесттик кетүү. Катышуу катталган жок.';
+}
+
+function previewSchedule() {
+  const el = document.getElementById('scheduleInfo');
+  el.hidden = false;
+  el.textContent = '🧪 Чыныгы график азырынча жүктөлбөйт.';
+}
+
+async function testFirebaseAuth() {
+  const status = document.getElementById('authStatus');
+  const button = document.getElementById('authTestBtn');
+  button.disabled = true;
+  status.textContent = '⏳ Firebase текшерилүүдө...';
+
+  try {
+    if (typeof firebase === 'undefined') {
+      throw new Error('Firebase китепканасы жүктөлгөн жок');
+    }
+
+    const app = firebase.apps.find(
+      a => a.name === 'kadamjay-pwa-test-v161'
+    ) || firebase.initializeApp(
+      firebaseConfig, 'kadamjay-pwa-test-v161'
+    );
+
+    if (app.options.projectId !== 'gps-tracker-test-d97dc') {
+      throw new Error('Тесттик Firebase эмес');
+    }
+
+    const auth = app.auth();
+    await auth.setPersistence(
+      firebase.auth.Auth.Persistence.SESSION
+    );
+
+    const result = await auth.signInAnonymously();
+    if (!result.user || !result.user.isAnonymous) {
+      throw new Error('Anonymous Authentication иштеген жок');
+    }
+
+    status.textContent =
+      '✅ Тесттик Firebase Authentication ийгиликтүү. Катышуу катталган жок.';
+    status.style.background = '#dcfce7';
+  } catch (error) {
+    status.textContent =
+      '❌ Firebase Authentication: ' +
+      (error.code || error.message);
+    status.style.background = '#fee2e2';
+  } finally {
+    button.disabled = false;
+  }
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .catch(error => console.warn('PWA Service Worker:', error));
+    navigator.serviceWorker.register('./sw.js', {scope:'./'})
+      .catch(error => console.warn('Service Worker:', error));
   });
 }
 </script>
