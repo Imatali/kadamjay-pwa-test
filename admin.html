@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="ky">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TEST — Кадамжай ЖДПБ - Админ панель</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.card-shadow{box-shadow:0 2px 12px #0000000d}
+th,td{vertical-align:top}
+</style>
+</head>
+
+<body class="bg-[#f8fafc] p-3 font-sans">
+<section id="authBox" class="max-w-md mx-auto mt-12 bg-white p-6 rounded-xl card-shadow">
+  <h2 class="font-bold text-xl mb-2">🔐 Администратордун кирүүсү</h2>
+  <p id="authStatus" class="text-sm text-gray-600 mb-3">Firebase текшерилүүдө...</p>
+  <form id="authForm" class="hidden space-y-3">
+    <input id="adminEmail" type="email" autocomplete="username" required placeholder="Электрондук почта" class="border rounded-lg p-3 w-full">
+    <input id="adminPassword" type="password" autocomplete="current-password" required placeholder="Сырсөз" class="border rounded-lg p-3 w-full">
+    <button id="authButton" type="submit" class="bg-blue-600 text-white p-3 rounded-lg w-full font-bold">Кирүү</button>
+  </form>
+</section>
+<div id="adminApp" class="max-w-[1450px] mx-auto hidden">
+
+<div class="flex justify-end mb-2"><button onclick="logoutAdmin()" class="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">🚪 Чыгуу</button></div>
+<!-- БАШКЫ БӨЛҮК -->
+<div class="bg-white p-4 rounded-xl card-shadow mb-3">
+  <div class="flex justify-between items-center gap-2 flex-wrap">
+    <div>
+      <h1 class="font-bold text-[15px] flex items-center gap-2">
+        <img src="logo.png?v=1010"
+             class="w-8 h-8 rounded-full bg-white border"
+             onerror="this.style.display='none'">
+        Кадамжай ЖДПБ - Көзөмөл
+      </h1>
+      <p class="text-[11px] text-gray-500">
+        Бөлүм <span id="deptCount">8</span> |
+        <span id="today"></span>
+      </p>
+    </div>
+
+    <div class="flex gap-2 flex-wrap">
+      <a href="reports.html?v=1119"
+         class="bg-purple-600 text-white px-4 py-2 rounded-lg text-[13px] font-bold">
+        📊 Отчет
+      </a>
+      <a href="worker.html?v=445"
+         target="_blank"
+         class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-[13px] font-bold">
+        👷 Жумушчу
+      </a>
+      <button onclick="addDept()"
+         class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">
+        + Бөлүм
+      </button>
+    </div>
+  </div>
+
+  <!-- КӨРСӨТКҮЧТӨР -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mt-3">
+    <button type="button" onclick="showAttendanceCategory('working')" class="bg-green-50 border border-green-200 px-3 py-2 rounded-xl text-center">
+      <div class="text-[11px] font-bold text-green-800">🟢 Жумушта</div>
+      <div id="f_working" class="text-[28px] font-black text-green-700">0</div>
+    </button>
+
+    <button type="button" onclick="showOutsideWorkers()" class="bg-orange-50 border border-orange-300 px-3 py-2 rounded-xl text-center hover:bg-orange-100" title="GPS боюнча аймактын сыртында жүргөндөрдүн тизмеси">
+      <div class="text-[11px] font-bold text-orange-800">📍 Сырттагылар</div>
+      <div id="f_outside" class="text-[28px] font-black text-orange-700">0</div>
+    </button>
+
+    <button type="button" onclick="showAttendanceCategory('late')" class="bg-orange-50 border border-orange-200 px-3 py-2 rounded-xl text-center">
+      <div class="text-[11px] font-bold text-orange-800">🕘 Кечиккендер</div>
+      <div id="f_late" class="text-[28px] font-black text-orange-700">0</div>
+    </button>
+
+    <button type="button" onclick="showAttendanceCategory('lunchOut')" class="bg-yellow-50 border border-yellow-200 px-3 py-2 rounded-xl text-center">
+      <div class="text-[11px] font-bold text-yellow-800">🍽️ Обетке эрте кеткендер</div>
+      <div id="f_lunchOut" class="text-[28px] font-black text-yellow-700">0</div>
+    </button>
+
+    <button type="button" onclick="showAttendanceCategory('lunchIn')" class="bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl text-center">
+      <div class="text-[11px] font-bold text-amber-900">⏰ Обеттен кеч келгендер</div>
+      <div id="f_lunchIn" class="text-[28px] font-black text-amber-800">0</div>
+    </button>
+
+    <button type="button" onclick="showAttendanceCategory('early')" class="bg-blue-50 border border-blue-200 px-3 py-2 rounded-xl text-center">
+      <div class="text-[11px] font-bold text-blue-800">🏃 Эрте кеткендер</div>
+      <div id="f_early" class="text-[28px] font-black text-blue-700">0</div>
+    </button>
+
+    <button type="button" onclick="showAttendanceCategory('absent')" class="bg-red-50 border border-red-200 px-3 py-2 rounded-xl text-center">
+      <div class="text-[11px] font-bold text-red-700">❌ Келбегендер</div>
+      <div id="f_absent" class="text-[28px] font-black text-red-700">0</div>
+    </button>
+    <button type="button" onclick="showAttendanceCategory('departed')" class="bg-slate-50 border rounded-xl p-2 text-center"><div class="text-[11px] font-bold">Жумуштан кеткендер</div><div id="f_departed" class="text-[28px] font-black">0</div></button>
+  </div>
+
+  <div id="categoryPanel" class="hidden mt-3 rounded-xl border bg-white p-3">
+<div class="flex justify-between"><b id="categoryTitle"></b><button type="button" onclick="closeAttendanceCategory()">✕</button></div>
+<div id="categoryList" class="overflow-x-auto mt-2"></div>
+<p class="text-xs text-gray-500 mt-2">Алдын ала каттоо маалыматы. Акыркы чечим администратордун кароосунан кийин.</p></div>
+<div id="outsidePanel" class="hidden mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3">
+    <div class="flex items-center justify-between gap-2"><b class="text-sm">📍 Аймактын сыртында (жаңы GPS)</b><button type="button" onclick="document.getElementById('outsidePanel').classList.add('hidden')" class="border rounded px-2 py-1">✕</button></div>
+    <div id="outsideList" class="text-sm mt-2"></div>
+    <p class="text-xs text-gray-600 mt-2">Бул тизмеге акыркы 2 мүнөттө жаңырган, тактыгы 100 мден жакшы GPS менен аймактан сыртта экени ырасталган кызматкерлер гана кирет. GPS эскирсе, «сыртта» деп эсептелбейт.</p>
+  </div>
+
+  <div class="flex justify-end mt-3">
+    <input id="search" oninput="render()"
+      placeholder="🔍 Бөлүм издөө..."
+      class="border rounded-xl px-3 py-2 text-[13px] w-[200px]">
+  </div>
+</div>
+
+<!-- БӨЛҮМДӨР -->
+<div id="grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+
+<!-- ЖУМУШЧУ ШИЛТЕМЕСИ -->
+<div class="mt-3 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 p-3 rounded-xl flex justify-between items-center flex-wrap gap-2">
+  <div class="text-[13px]">
+    👷 <b>Жумушчу:</b>
+    <span class="text-blue-600">worker.html?v=445</span>
+  </div>
+  <button onclick="copyWorkerLink()"
+    class="bg-white border px-3 py-1.5 rounded-lg text-sm shadow-sm">
+    📋 Шилтемени көчүрүү
+  </button>
+</div>
+
+<!-- ЖАЛПЫ ГРАФИК -->
+<details class="mt-4 bg-white rounded-xl card-shadow overflow-hidden">
+  <summary class="cursor-pointer select-none p-4 font-bold text-sm hover:bg-slate-50">⚙️ Жалпы жөндөөлөр <span class="text-gray-500 font-normal">— жалпы жумуш графиги</span></summary>
+  <div class="px-4 pb-4">
+  <h3 class="font-bold mb-2">Жалпы жумуш графиги</h3>
+  <p class="text-xs text-gray-500 mb-3">Бул график жаңы PIN түзүүдө колдонулат. Мурдагы кызматкерлердин графиктери өзгөрбөйт.</p>
+  <div class="flex flex-wrap gap-3 mb-3" id="defaultWorkDays">
+    <label><input type="checkbox" value="1" checked> Дүй</label>
+    <label><input type="checkbox" value="2" checked> Шей</label>
+    <label><input type="checkbox" value="3" checked> Шар</label>
+    <label><input type="checkbox" value="4" checked> Бей</label>
+    <label><input type="checkbox" value="5" checked> Жума</label>
+    <label><input type="checkbox" value="6"> Ише</label>
+    <label><input type="checkbox" value="0"> Жек</label>
+  </div>
+  <div class="flex flex-wrap gap-3 items-end">
+    <label class="text-xs">Келүү<input id="defaultStart" type="time" value="08:30" class="border rounded p-2 block"></label>
+    <label class="text-xs">Тыныгууга чыгуу<input id="defaultLunchS" type="time" value="12:00" class="border rounded p-2 block"></label>
+    <label class="text-xs">Тыныгуудан келүү<input id="defaultLunchE" type="time" value="13:00" class="border rounded p-2 block"></label>
+    <label class="text-xs">Кетүү<input id="defaultEnd" type="time" value="17:30" class="border rounded p-2 block"></label>
+    <button onclick="saveDefaultSchedule()" class="bg-blue-600 text-white rounded px-4 py-2">💾 Сактоо</button>
+  </div>
+  <p id="defaultScheduleStatus" class="text-xs text-gray-500 mt-2">Жалпы график жүктөлүүдө...</p>
+  </div>
+</details>
+
+<!-- Убактылуу шайкештик: эски формалар JS функциялары үчүн гана сакталды.
+     Башкаруу эми schedule.html барагында жүргүзүлөт. -->
+<div id="legacyScheduleCompatibility" class="hidden" aria-hidden="true" inert>
+<!-- БӨЛҮМДҮН ЖЕКЕ ГРАФИГИ -->
+<div class="mt-4 bg-white p-4 rounded-xl card-shadow">
+  <h3 class="font-bold mb-2">🏢 Бөлүмдүн жеке графиги</h3>
+  <p class="text-xs text-gray-500 mb-3">Бөлүмгө график сакталбаса, жалпы график колдонулат. Мурдагы PIN графиктери өзгөрбөйт.</p>
+  <label class="text-xs block mb-2">Бөлүм
+    <select id="deptScheduleSelect" onchange="showDeptSchedule()" class="border rounded p-2 block w-full max-w-sm"></select>
+  </label>
+  <div id="deptWorkDays" class="flex flex-wrap gap-3 mb-3">
+    <label><input type="checkbox" value="1"> Дүй</label>
+    <label><input type="checkbox" value="2"> Шей</label>
+    <label><input type="checkbox" value="3"> Шар</label>
+    <label><input type="checkbox" value="4"> Бей</label>
+    <label><input type="checkbox" value="5"> Жума</label>
+    <label><input type="checkbox" value="6"> Ише</label>
+    <label><input type="checkbox" value="0"> Жек</label>
+  </div>
+  <div class="flex flex-wrap gap-3 items-end">
+    <label class="text-xs">Келүү<input id="deptStart" type="time" class="border rounded p-2 block"></label>
+    <label class="text-xs">Тыныгууга чыгуу<input id="deptLunchS" type="time" class="border rounded p-2 block"></label>
+    <label class="text-xs">Тыныгуудан келүү<input id="deptLunchE" type="time" class="border rounded p-2 block"></label>
+    <label class="text-xs">Кетүү<input id="deptEnd" type="time" class="border rounded p-2 block"></label>
+    <button onclick="saveDeptSchedule()" class="bg-blue-600 text-white rounded px-4 py-2">💾 Сактоо</button>
+    <button onclick="removeDeptSchedule()" class="bg-gray-100 border rounded px-4 py-2">↩ Жалпы графикке кайтаруу</button>
+  </div>
+  <p id="deptScheduleStatus" class="text-xs text-gray-500 mt-2">Бөлүм тандалууда...</p>
+</div>
+
+<!-- КЫЗМАТКЕРДИН ЖЕКЕ ЖАНА УБАКТЫЛУУ ГРАФИГИ -->
+<div class="mt-4 bg-white p-4 rounded-xl card-shadow">
+  <h3 class="font-bold mb-2">👤 Кызматкердин жеке графиги</h3>
+  <p class="text-xs text-amber-700 mb-3">Бул бөлүм график жөндөөлөрүн өзүнчө сактайт. Азырынча worker.html жана табель бул жаңы жөндөөлөрдү автоматтык колдонбойт.</p>
+  <label class="text-xs block mb-2">Кызматкер
+    <select id="workerScheduleSelect" onchange="showWorkerSchedule()" class="border rounded p-2 block w-full max-w-md"></select>
+  </label>
+  <label class="text-xs block mb-2">Туруктуу графиктин булагы
+    <select id="workerScheduleMode" onchange="showWorkerScheduleMode()" class="border rounded p-2 block w-full max-w-md">
+      <option value="legacy">Мурдагы PIN графиги (өзгөртүүсүз)</option>
+      <option value="inherit">Бөлүмдүн графиги</option>
+      <option value="custom">Жеке туруктуу график</option>
+    </select>
+  </label>
+  <div id="workerPermanentFields" class="border rounded-lg p-3 mb-3">
+    <div class="font-semibold text-sm mb-2">Туруктуу жеке график</div>
+    <div id="workerPermanentDays" class="flex flex-wrap gap-3 mb-2">
+      <label><input type="checkbox" value="1"> Дүй</label><label><input type="checkbox" value="2"> Шей</label>
+      <label><input type="checkbox" value="3"> Шар</label><label><input type="checkbox" value="4"> Бей</label>
+      <label><input type="checkbox" value="5"> Жума</label><label><input type="checkbox" value="6"> Ише</label>
+      <label><input type="checkbox" value="0"> Жек</label>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <label class="text-xs">Келүү<input id="workerPermanentStart" type="time" class="border rounded p-2 block"></label>
+      <label class="text-xs">Тыныгууга чыгуу<input id="workerPermanentLunchS" type="time" class="border rounded p-2 block"></label>
+      <label class="text-xs">Тыныгуудан келүү<input id="workerPermanentLunchE" type="time" class="border rounded p-2 block"></label>
+      <label class="text-xs">Кетүү<input id="workerPermanentEnd" type="time" class="border rounded p-2 block"></label>
+    </div>
+  </div>
+  <label class="flex items-center gap-2 text-sm mb-2"><input type="checkbox" id="workerTempEnabled" onchange="showWorkerScheduleMode()"> Убактылуу график кошуу</label>
+  <div id="workerTempFields" class="border rounded-lg p-3 mb-3 hidden">
+    <div class="flex flex-wrap gap-2 mb-3">
+      <label class="text-xs">Башталган күн<input id="workerTempFrom" type="date" class="border rounded p-2 block"></label>
+      <label class="text-xs">Бүткөн күн (кошо эсептелет)<input id="workerTempTo" type="date" class="border rounded p-2 block"></label>
+    </div>
+    <div id="workerTempDays" class="flex flex-wrap gap-3 mb-2">
+      <label><input type="checkbox" value="1"> Дүй</label><label><input type="checkbox" value="2"> Шей</label>
+      <label><input type="checkbox" value="3"> Шар</label><label><input type="checkbox" value="4"> Бей</label>
+      <label><input type="checkbox" value="5"> Жума</label><label><input type="checkbox" value="6"> Ише</label>
+      <label><input type="checkbox" value="0"> Жек</label>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <label class="text-xs">Келүү<input id="workerTempStart" type="time" class="border rounded p-2 block"></label>
+      <label class="text-xs">Тыныгууга чыгуу<input id="workerTempLunchS" type="time" class="border rounded p-2 block"></label>
+      <label class="text-xs">Тыныгуудан келүү<input id="workerTempLunchE" type="time" class="border rounded p-2 block"></label>
+      <label class="text-xs">Кетүү<input id="workerTempEnd" type="time" class="border rounded p-2 block"></label>
+    </div>
+  </div>
+  <button onclick="saveWorkerSchedule()" class="bg-blue-600 text-white rounded px-4 py-2">💾 Кызматкердин графигин сактоо</button>
+  <p id="workerScheduleStatus" class="text-xs text-gray-500 mt-2">Кызматкер тандалууда...</p>
+</div>
+</div>
+
+<!-- PIN БЕРҮҮ -->
+<div id="pinCreationSection" class="mt-4 bg-white p-4 rounded-xl card-shadow">
+  <div class="flex justify-between items-center flex-wrap gap-2 mb-3">
+    <h3 class="font-bold">👥 Кызматкерлерге PIN берүү жана график</h3>
+    <div class="flex gap-2">
+      <input id="pinSearch" oninput="render()"
+        placeholder="Аты / PIN / Бөлүм..."
+        class="border rounded-lg px-3 py-2 text-[13px] w-[220px] bg-yellow-50">
+      <button onclick="document.getElementById('pinSearch').value='';render()"
+        class="bg-gray-100 px-3 py-2 rounded-lg text-[12px]">✕</button>
+    </div>
+  </div>
+
+  <div class="flex gap-2 flex-wrap items-end bg-gray-50 p-2 rounded-lg border">
+    <input id="nameInput" placeholder="Кызматкердин аты-жөнү"
+      class="border p-2.5 rounded-lg flex-1 min-w-[160px] bg-white">
+
+    <select id="deptInput"
+      class="border p-2.5 rounded-lg bg-white"></select>
+
+    <label class="text-[11px] font-semibold text-gray-700">
+      Кызматкердин ролу
+      <select id="roleInput" class="border p-2.5 rounded-lg bg-white block mt-1 min-w-[155px]">
+        <option value="employee">Кызматкер</option>
+        <option value="head">Бөлүм башчысы</option>
+        <option value="director">Директор</option>
+      </select>
+    </label>
+
+    <div class="flex gap-1">
+      <div>
+        <label class="text-[10px] block">Келүү</label>
+        <input id="s1" type="time" value="08:30"
+          class="border w-[100px] p-1.5 rounded text-[12px]">
+      </div>
+      <div>
+        <label class="text-[10px] block">Обетке чыгуу</label>
+        <input id="s2" type="time" value="12:00"
+          class="border w-[100px] p-1.5 rounded text-[12px]">
+      </div>
+      <div>
+        <label class="text-[10px] block">Обеттен келүү</label>
+        <input id="s3" type="time" value="13:00"
+          class="border w-[100px] p-1.5 rounded text-[12px]">
+      </div>
+      <div>
+        <label class="text-[10px] block">Кетүү</label>
+        <input id="s4" type="time" value="17:30"
+          class="border w-[100px] p-1.5 rounded text-[12px]">
+      </div>
+    </div>
+
+    <button onclick="addWorker()"
+      class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold">
+      + PIN түзүү
+    </button>
+  </div>
+
+  <div class="mt-3 text-[11px] text-gray-500">
+    Табылды: <b id="pinFound">0</b>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-[13px] mt-2" id="pinsTable"></table>
+  </div>
+</div>
+
+
+<!-- КЕЛҮҮ-КЕТҮҮ ТАРЫХЫ -->
+<div class="mt-4 bg-white p-4 rounded-xl card-shadow">
+  <h3 class="font-bold text-lg mb-3">
+    📋 Кызматкерлердин келүү-кетүү тарыхы
+  </h3>
+
+  <div class="flex gap-2 flex-wrap mb-3">
+    <input id="attendanceDate" type="date"
+      class="border rounded-lg px-3 py-2 text-sm">
+
+    <input id="attendanceSearch" type="text"
+      placeholder="Аты, PIN же бөлүм издөө..."
+      class="border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
+
+    <select id="attendanceType"
+      class="border rounded-lg px-3 py-2 text-sm">
+      <option value="">Бардык окуялар</option>
+      <option value="in">Жумушка келди</option>
+      <option value="lunch_out">Обедке кетти</option><option value="lunch_in">Обедден келди</option><option value="out">Жумуштан кетти</option>
+    </select>
+
+    <button onclick="renderAttendance()"
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+      Издөө
+    </button>
+  </div>
+
+  <div class="flex gap-4 flex-wrap text-sm mb-2">
+    <span>Окуялар: <b id="attendanceCount">0</b></span>
+    <span>Келгендер: <b id="attendanceIn">0</b></span>
+    <span>Кеткендер: <b id="attendanceOut">0</b></span>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="p-2 text-left">Убакыт</th>
+          <th class="p-2 text-left">Аты-жөнү</th>
+          <th class="p-2 text-left">Бөлүм</th>
+          <th class="p-2 text-left">PIN</th>
+          <th class="p-2 text-left">Окуя</th>
+          <th class="p-2 text-left">GPS</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceTable">
+        <tr><td colspan="6" class="p-4 text-gray-400">Жүктөлүүдө...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-[11px] text-gray-400 mt-3">
+    Тарых Firebase базасындагы test/attendance маалыматынан алынат.
+  </p>
+</div>
+
+<div class="text-[11px] text-gray-400 text-center mt-4 mb-6">
+  Кадамжай ЖДПБ | Admin v1119 (attendance alignment)
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyAws1PfcVA1AOg1ToquJVs05FBg0kPE1E8",
+  authDomain:"gps-tracker-test-d97dc.firebaseapp.com",
+  databaseURL:"https://gps-tracker-test-d97dc-default-rtdb.firebaseio.com",
+  projectId:"gps-tracker-test-d97dc",
+  appId:"1:894193046205:web:6b06231416f0f4eb5f9dd4"
+});
+
+const db = firebase.database();
+const auth = firebase.auth();
+const ADMIN_UID = 'N9LwkUA3ePaqLWaPh6B4HzavTJT2';
+let adminAuthorized = false;
+const authBox = document.getElementById('authBox');
+const authStatus = document.getElementById('authStatus');
+const authForm = document.getElementById('authForm');
+const adminApp = document.getElementById('adminApp');
+function ensureAdmin() {
+  if (!adminAuthorized || auth.currentUser?.uid !== ADMIN_UID) {
+    throw new Error('Администратордун уруксаты жок');
+  }
+}
+window.logoutAdmin = async function () { await auth.signOut(); };
+authForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = document.getElementById('authButton');
+  button.disabled = true;
+  authStatus.textContent = 'Кирүү текшерилүүдө...';
+  try {
+    await auth.signInWithEmailAndPassword(
+      document.getElementById('adminEmail').value.trim(),
+      document.getElementById('adminPassword').value
+    );
+    document.getElementById('adminPassword').value = '';
+  } catch (error) {
+    authStatus.textContent = 'Кирүү катасы: ' + error.message;
+  } finally { button.disabled = false; }
+});
+
+// Бөлүмдөрдүн негизги булагы — Firebase test/departments.
+let depts = [];
+function departmentNames(value) {
+  const entries = value && typeof value === 'object' ? Object.values(value) : [];
+  return [...new Set(entries.map(v => typeof v === 'string' ? v : v?.name)
+    .filter(v => typeof v === 'string' && v.trim()).map(v => v.trim()))];
+}
+
+const colors = [
+  "border-t-blue-500","border-t-amber-400",
+  "border-t-sky-400","border-t-purple-500",
+  "border-t-emerald-500","border-t-cyan-500",
+  "border-t-red-400","border-t-orange-400"
+];
+
+let allPins = {};
+let allWorkers = {};
+let allLogs = {};
+let allAttendance = {};
+let allGpsStatus = {};
+let allDeptAreas = {};
+const FALLBACK_DEFAULT_SCHEDULE = {
+  start:'08:30', lunchS:'12:00', lunchE:'13:00', end:'17:30',
+  workDays:[1,2,3,4,5]
+};
+let defaultSchedule = {...FALLBACK_DEFAULT_SCHEDULE};
+let deptSchedules = {};
+let workerSchedules = {};
+// Бөлүм аталышында Firebase уруксат бербеген белгилер болушу мүмкүн.
+function deptScheduleKey(dept) { return encodeURIComponent(dept); }
+function effectiveDeptSchedule(dept) {
+  return deptSchedules[deptScheduleKey(dept)] || defaultSchedule;
+}
+function updateDeptScheduleOptions() {
+  const el = document.getElementById('deptScheduleSelect');
+  const previous = el.value;
+  el.innerHTML = depts.map(d => `<option value="${escapeAttr(d)}">${escapeHTML(d)}</option>`).join('');
+  if (depts.includes(previous)) el.value = previous;
+  showDeptSchedule();
+}
+function showDeptSchedule() {
+  const dept = document.getElementById('deptScheduleSelect').value;
+  const own = deptSchedules[deptScheduleKey(dept)];
+  const data = own || defaultSchedule;
+  for (const [id,key] of [['deptStart','start'],['deptLunchS','lunchS'],['deptLunchE','lunchE'],['deptEnd','end']]) {
+    document.getElementById(id).value = data[key] || '';
+  }
+  document.querySelectorAll('#deptWorkDays input').forEach(el => {
+    el.checked = (data.workDays || []).includes(Number(el.value));
+  });
+  document.getElementById('deptScheduleStatus').textContent = dept
+    ? (own ? 'Бул бөлүмдүн жеке графиги сакталган' : 'Бул бөлүм жалпы графикти колдонот')
+    : 'Бөлүм жок';
+}
+function fillNewWorkerSchedule() {
+  const dept = document.getElementById('deptInput').value;
+  const data = effectiveDeptSchedule(dept);
+  for (const [id,key] of [['s1','start'],['s2','lunchS'],['s3','lunchE'],['s4','end']]) {
+    document.getElementById(id).value = data[key];
+  }
+}
+window.saveDeptSchedule = async function() {
+  ensureAdmin();
+  const dept = document.getElementById('deptScheduleSelect').value;
+  if (!dept || !depts.includes(dept)) { alert('Бөлүмдү тандаңыз'); return; }
+  const get = id => document.getElementById(id).value;
+  const start=get('deptStart'), lunchS=get('deptLunchS'), lunchE=get('deptLunchE'), end=get('deptEnd');
+  const workDays=[...document.querySelectorAll('#deptWorkDays input:checked')].map(el=>Number(el.value)).sort();
+  if (!(start && lunchS && lunchE && end && start < lunchS && lunchS <= lunchE && lunchE < end)) {
+    alert('Графиктин убакыттарын туура белгилеңиз'); return;
+  }
+  // Эс алуу күндөрү гана болгон бөлүм үчүн [] ордуна атайын маанини сактайбыз.
+  if (!workDays.length) { alert('Азырынча кеминде бир жумуш күнүн тандаңыз'); return; }
+  try {
+    await db.ref('test/deptSchedules/' + deptScheduleKey(dept)).set({dept,start,lunchS,lunchE,end,workDays});
+    document.getElementById('deptScheduleStatus').textContent='Бөлүмдүн графиги сакталды';
+    alert('Бөлүмдүн графиги сакталды');
+  } catch(error) { alert('Сактоо катасы: '+error.message); }
+};
+window.removeDeptSchedule = async function() {
+  ensureAdmin();
+  const dept = document.getElementById('deptScheduleSelect').value;
+  if (!dept || !deptSchedules[deptScheduleKey(dept)]) return;
+  if (!confirm('Бул бөлүмдүн жеке графигин өчүрүп, жалпы графикке кайтарасызбы?')) return;
+  try { await db.ref('test/deptSchedules/' + deptScheduleKey(dept)).remove(); }
+  catch(error) { alert('Ката: '+error.message); }
+};
+
+function showDefaultSchedule() {
+  for (const [id, key] of [['defaultStart','start'],['defaultLunchS','lunchS'],['defaultLunchE','lunchE'],['defaultEnd','end']]) {
+    document.getElementById(id).value = defaultSchedule[key];
+  }
+  document.querySelectorAll('#defaultWorkDays input').forEach(el => {
+    el.checked = defaultSchedule.workDays.includes(Number(el.value));
+  });
+  // PIN түзүү формасына да жаңы баштапкы убакыттарды коюу.
+  for (const [id,key] of [['s1','start'],['s2','lunchS'],['s3','lunchE'],['s4','end']]) {
+    document.getElementById(id).value = defaultSchedule[key];
+  }
+  document.getElementById('defaultScheduleStatus').textContent = 'Жалпы график даяр';
+  showDeptSchedule();
+  fillNewWorkerSchedule();
+}
+window.saveDefaultSchedule = async function() {
+  ensureAdmin();
+  const get = id => document.getElementById(id).value;
+  const start=get('defaultStart'), lunchS=get('defaultLunchS'), lunchE=get('defaultLunchE'), end=get('defaultEnd');
+  const workDays = [...document.querySelectorAll('#defaultWorkDays input:checked')].map(x=>Number(x.value)).sort();
+  if (!(start && lunchS && lunchE && end && start < lunchS && lunchS <= lunchE && lunchE < end) || !workDays.length) {
+    alert('Убакыттарды жана жумуш күндөрүн туура белгилеңиз'); return;
+  }
+  try {
+    await db.ref('test/settings/defaultSchedule').set({start,lunchS,lunchE,end,workDays});
+    alert('Жалпы график сакталды');
+  } catch(error) { alert('Сактоо катасы: '+error.message); }
+};
+
+
+
+function localDateString(timestamp) {
+  const d = new Date(timestamp);
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+document.getElementById('today').innerText =
+  new Date().toLocaleDateString('ky-KG');
+
+document.getElementById('attendanceDate').value =
+  localDateString(Date.now());
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[ch]);
+}
+
+function escapeAttr(value) {
+  return escapeHTML(value);
+}
+
+function timeString(timestamp) {
+  return new Date(timestamp).toLocaleTimeString('ky-KG', {
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit'
+  });
+}
+
+// Маалыматтар администратор текшерилгенден кийин гана жүктөлөт.
+let listening = false;
+let logDay = localDateString(Date.now());
+let dailyLogsRef = null;
+const subscriptions = [];
+function subscribe(path, callback) {
+  const ref = db.ref(path);
+  ref.on('value', callback, error => {
+    authStatus.textContent = 'Firebase окуу катасы: ' + error.message;
+  });
+  subscriptions.push(ref);
+}
+function stopListeners() {
+  subscriptions.forEach(ref => ref.off());
+  subscriptions.length = 0;
+  listening = false;
+  dailyLogsRef = null;
+  allPins = {}; allWorkers = {}; allLogs = {}; allAttendance = {}; allGpsStatus = {}; allDeptAreas = {}; deptSchedules = {}; workerSchedules = {};
+}
+function subscribeDailyLogs() {
+  const today = localDateString(Date.now());
+  if (dailyLogsRef) {
+    dailyLogsRef.off();
+    const index = subscriptions.indexOf(dailyLogsRef);
+    if (index >= 0) subscriptions.splice(index, 1);
+  }
+  logDay = today;
+  allLogs = {};
+  dailyLogsRef = db.ref('test/logs/' + today);
+  dailyLogsRef.on('value', snapshot => {
+    allLogs = snapshot.val() || {};
+    render();
+  }, error => { authStatus.textContent = 'Firebase окуу катасы: ' + error.message; });
+  subscriptions.push(dailyLogsRef);
+}
+// Барак түнү бою ачык калса, дата жана күндүк статистика жаңыланат.
+setInterval(() => {
+  if (!adminAuthorized) return;
+  const today = localDateString(Date.now());
+  if (today !== logDay) {
+    document.getElementById('today').innerText = new Date().toLocaleDateString('ky-KG');
+    document.getElementById('attendanceDate').value = today;
+    subscribeDailyLogs();
+    renderAttendance();
+  }
+  render();
+}, 60000);
+
+function startListeners() {
+  if (listening) return;
+  listening = true;
+  subscribe('test/departments', snapshot => {
+    depts = departmentNames(snapshot.val());
+    render();
+  });
+  subscribe('test/settings/defaultSchedule', snapshot => {
+    const stored = snapshot.val();
+    defaultSchedule = stored && Array.isArray(stored.workDays)
+      ? {...FALLBACK_DEFAULT_SCHEDULE, ...stored}
+      : {...FALLBACK_DEFAULT_SCHEDULE};
+    showDefaultSchedule(); render();
+  });
+  subscribe('test/deptSchedules', snapshot => {
+    deptSchedules = snapshot.val() || {};
+    showDeptSchedule(); fillNewWorkerSchedule(); render();
+  });
+  subscribe('test/workerSchedules', snapshot => { workerSchedules = snapshot.val() || {}; showWorkerSchedule(); render(); });
+  subscribe('test/pins', snapshot => { allPins = snapshot.val() || {}; render(); });
+  subscribe('test/workers', snapshot => { allWorkers = snapshot.val() || {}; render(); });
+  subscribeDailyLogs();
+  subscribe('test/gpsStatus/byPin', snapshot => { allGpsStatus = snapshot.val() || {}; render(); });
+  subscribe('test/deptAreas/byName', snapshot => { allDeptAreas = snapshot.val() || {}; render(); });
+  subscribe('test/attendance', snapshot => {
+    allAttendance = snapshot.val() || {}; renderAttendance(); render();
+  });
+}
+auth.onAuthStateChanged(async user => {
+  adminAuthorized = Boolean(user && user.uid === ADMIN_UID);
+  if (adminAuthorized) {
+    authBox.classList.add('hidden');
+    adminApp.classList.remove('hidden');
+    startListeners();
+    render(); renderAttendance();
+  } else {
+    closeAttendanceCategory();
+    attendanceGroups={};
+    stopListeners();
+    adminApp.classList.add('hidden');
+    authBox.classList.remove('hidden');
+    authForm.classList.remove('hidden');
+    authStatus.textContent = user
+      ? 'Бул аккаунт администратор эмес. Башка аккаунт менен кириңиз.'
+      : 'Администратордун почтасын жана сырсөзүн киргизиңиз.';
+    if (user) {
+      await auth.signOut();
+    }
+  }
+});
+
+// Бүгүнкү иш абалын окуялар боюнча аныктайбыз. Мурунку күндүн
+// "inside:true" мааниси жаңы күндө автоматтык "Жумушта" болбойт.
+// Бул маалымат Firebase'ге жазылбайт: панелдеги эсеп гана өзгөрөт.
+function currentWorkerStatusByPin() {
+  const today = localDateString(Date.now());
+  const latest = {};
+  function consider(pin, inside, time, source) {
+    if (!Object.prototype.hasOwnProperty.call(allPins, pin) || !allPins[pin]) return;
+    if (!Number.isFinite(time) || time <= 0 || localDateString(time) !== today) return;
+    // Бирдей убакыт болсо чыгуу (false) артыкчылыктуу.
+    if (!latest[pin] || time > latest[pin].time ||
+        (time === latest[pin].time && inside === false)) {
+      latest[pin] = {inside, time, source};
+    }
+  }
+  for (const w of Object.values(allWorkers)) {
+    if (!w || typeof w !== 'object' || typeof w.inside !== 'boolean') continue;
+    const pin = String(w.pin ?? '');
+    const time = w.inside
+      ? Math.max(Number(w.time) || 0, Number(w.ts) || 0)
+      : Math.max(Number(w.leaveTime) || 0, Number(w.time) || 0, Number(w.ts) || 0);
+    consider(pin, w.inside, time, 'workers');
+  }
+  for (const event of Object.values(allAttendance)) {
+    if (!event || typeof event !== 'object') continue;
+    const type = String(event.type || '').toLowerCase();
+    if (type !== 'in' && type !== 'out') continue;
+    consider(String(event.pin ?? ''), type === 'in', Number(event.time), 'attendance');
+  }
+  return latest;
+}
+
+// Картадагы v444 эрежеси: 2 мүнөттөн жаңы, 100 м же жакшы GPS,
+// ошол эле workerId, жана бөлүмдүн Firebase'де сакталган жумуш полигоны.
+// GPS жок/эски же полигон жок болсо, «сыртта» деп эсептелбейт.
+const OUTSIDE_GPS_FRESH_MS = 2 * 60 * 1000;
+function pointInWorkPolygons(lat, lng, polygons) {
+  if (!Array.isArray(polygons) || !polygons.length) return null;
+  return polygons.some(ring => {
+    if (!Array.isArray(ring) || ring.length < 3) return false;
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i], b = ring[j];
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length < 2 || b.length < 2) return false;
+      const ay = Number(a[0]), ax = Number(a[1]), by = Number(b[0]), bx = Number(b[1]);
+      if (![ay, ax, by, bx].every(Number.isFinite)) return false;
+      if ((ay > lat) !== (by > lat) && lng < (bx - ax) * (lat - ay) / (by - ay) + ax) inside = !inside;
+    }
+    return inside;
+  });
+}
+function outsideWorkersNow(statusByPin) {
+  const latestAttendance = {};
+  for (const event of Object.values(allAttendance)) {
+    if (!event || !event.pin || !event.time) continue;
+    const pin = String(event.pin), t = Number(event.time);
+    if (!Number.isFinite(t) || t <= 0) continue;
+    if (!latestAttendance[pin] || t > Number(latestAttendance[pin].time)) latestAttendance[pin] = event;
+  }
+  const now = Date.now(), result = [];
+  for (const [pin, pinData] of Object.entries(allPins)) {
+    if (!pinData || !depts.includes(pinData.bolum) || statusByPin[pin]?.inside !== true) continue;
+    const event = latestAttendance[pin], gps = allGpsStatus[pin];
+    if (!event || event.type !== 'in' || !gps || gps.workerId !== event.workerId) continue;
+    const time = Number(gps.updatedAt), lat = Number(gps.lat), lng = Number(gps.lng), accuracy = Number(gps.accuracy);
+    if (!Number.isFinite(time) || time <= 0 || time > now + 60000 || now - time >= OUTSIDE_GPS_FRESH_MS ||
+        !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 ||
+        !Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 100) continue;
+    const area = allDeptAreas[encodeURIComponent(pinData.bolum)];
+    if (pointInWorkPolygons(lat, lng, area?.polygons) !== false) continue;
+    result.push({pin, name: pinData.name || event.name || 'Кызматкер', dept: pinData.bolum, time});
+  }
+  return result.sort((a,b) => a.dept.localeCompare(b.dept) || a.name.localeCompare(b.name));
+}
+function updateOutsidePanel(workers) {
+  const list = document.getElementById('outsideList');
+  if (!workers.length) { list.textContent = 'Азыр жаңы GPS менен сыртта экени ырасталган кызматкер жок.'; return; }
+  list.replaceChildren();
+  for (const w of workers) {
+    const row = document.createElement('div'); row.className = 'border-b border-orange-200 py-2';
+    const b = document.createElement('b'); b.textContent = w.name;
+    const detail = document.createElement('span');
+    detail.textContent = ' — ' + w.dept + ' | Акыркы GPS: ' + new Date(w.time).toLocaleString('ky-KG');
+    row.append(b, detail); list.appendChild(row);
+  }
+}
+window.showOutsideWorkers = function() {
+  ensureAdmin();
+  const panel = document.getElementById('outsidePanel');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) updateOutsidePanel(outsideWorkersNow(currentWorkerStatusByPin()));
+};
+
+// БӨЛҮМДӨРДҮ ЖАНА PIN ТАБЛИЦАСЫН КӨРСӨТҮҮ
+const minutes=t=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t||'');return m?Number(m[1])*60+Number(m[2]):null};
+const attendanceValidSchedule=s=>s&&Array.isArray(s.workDays)&&['start','lunchS','lunchE','end'].every(k=>minutes(s[k])!==null)&&minutes(s.start)<minutes(s.lunchS)&&minutes(s.lunchS)<=minutes(s.lunchE)&&minutes(s.lunchE)<minutes(s.end);
+function scheduleFor(pin,v,date){
+ const config=workerSchedules[pin]||{};
+ const temp=config.temporary;
+ if(temp&&temp.from<=date&&date<=temp.to&&attendanceValidSchedule(temp.schedule))return {schedule:temp.schedule,source:'Убактылуу'};
+ if(config.mode==='custom'&&attendanceValidSchedule(config.permanent))return {schedule:config.permanent,source:'Жеке туруктуу'};
+ const dept=deptSchedules[encodeURIComponent(v.bolum||'')];
+ if(config.mode==='inherit')return {schedule:attendanceValidSchedule(dept)?dept:defaultSchedule,source:attendanceValidSchedule(dept)?'Бөлүм':'Жалпы'};
+ if(config.mode==='legacy'||!config.mode){if(attendanceValidSchedule(v.schedule))return {schedule:v.schedule,source:'Мурдагы PIN'};}
+ return {schedule:attendanceValidSchedule(dept)?dept:defaultSchedule,source:attendanceValidSchedule(dept)?'Бөлүм':'Жалпы'};
+}
+function planFor(schedule,date){
+ if(!attendanceValidSchedule(schedule))return {mins:null,windows:[]};
+ const day=new Date(date+'T12:00:00').getDay();
+ if(!schedule.workDays.map(Number).includes(day))return {mins:0,windows:[]};
+ const a=minutes(schedule.start),b=minutes(schedule.lunchS),c=minutes(schedule.lunchE),d=minutes(schedule.end);
+ return {mins:(b-a)+(d-c),windows:[[a,b],[c,d]]};
+}
+function attendanceDay(ev,schedule,date,now){
+ const plan=planFor(schedule,date), first=ev.ins.length?Math.min(...ev.ins):null;
+ const last=ev.outs.length?Math.max(...ev.outs):null;
+ const minute=t=>{const d=new Date(t);return d.getHours()*60+d.getMinutes()};
+ const today=localDateString(now), start=minutes(schedule?.start), end=minutes(schedule?.end);
+ const lunchOut=(ev.lunchOut||[]).filter(t=>first!==null&&t>=first&&(last===null||t<=last)).sort((a,b)=>a-b)[0]??null;
+ const lunchIn=(ev.lunchIn||[]).filter(t=>lunchOut!==null&&t>=lunchOut&&(last===null||t<=last)).sort((a,b)=>a-b)[0]??null;
+ const lunchEarly=plan.mins>0&&lunchOut!==null?Math.max(0,minutes(schedule.lunchS)-minute(lunchOut)):0;
+ const lunchLate=plan.mins>0&&lunchIn!==null?Math.max(0,minute(lunchIn)-minutes(schedule.lunchE)):0;
+ const late=plan.mins>0&&first!==null&&minute(first)>start;
+ const early=plan.mins>0&&first!==null&&last!==null&&last>first&&minute(last)<end;
+ const absent=plan.mins>0&&first===null&&(date<today||(date===today&&minute(now)>start));
+ const midnight=new Date(date+'T00:00:00').getTime();
+ const worked=plan.mins===0?0:first===null||last===null||last<=first||plan.mins===null?null:Math.round(plan.windows.reduce((sum,[x,y])=>sum+Math.max(0,Math.min((last-midnight)/60000,y)-Math.max((first-midnight)/60000,x)),0));
+ return {first,last,lunchOut,lunchIn,lunchEarly,lunchLate,late,early,absent,planned:plan.mins,worked,lateMinutes:late?minute(first)-start:0,earlyMinutes:early?end-minute(last):0};
+}
+function dailyDiscipline(pins, now=Date.now()) {
+ const day=localDateString(now),events={},result={late:[],early:[],arrived:new Set(),days:{}};
+ for(const e of Object.values(allAttendance)){
+  if(!e||!e.pin||!Number.isFinite(Number(e.time))||Number(e.time)>now||localDateString(Number(e.time))!==day)continue;
+  const ev=events[String(e.pin)] ||= {ins:[],outs:[],lunchOut:[],lunchIn:[]};
+  if(e.type==='in')ev.ins.push(Number(e.time));if(e.type==='out')ev.outs.push(Number(e.time));if(e.type==='lunch_out')ev.lunchOut.push(Number(e.time));if(e.type==='lunch_in')ev.lunchIn.push(Number(e.time));
+ }
+ for(const pin of pins){
+  const {schedule}=scheduleFor(pin,allPins[pin],day),d=attendanceDay(events[pin]||{ins:[],outs:[],lunchOut:[],lunchIn:[]},schedule,day,now);result.days[pin]=d;
+  if(d.first!==null)result.arrived.add(pin);
+  if(d.late)result.late.push({pin,planned:schedule.start,actual:timeString(d.first),difference:d.lateMinutes});
+  if(d.early)result.early.push({pin,planned:schedule.end,actual:timeString(d.last),difference:d.earlyMinutes});
+ }
+ return result;
+}
+
+let attendanceGroups={}, activeCategory=null;
+const categoryNames={working:'Жумушта',late:'Кечиккендер',early:'Эрте кеткендер',lunchOut:'Обетке эрте кеткендер',lunchIn:'Обеттен кеч келгендер',absent:'Келбегендер',departed:'Жумуштан кеткендер'};
+window.closeAttendanceCategory=function(){activeCategory=null;document.getElementById('categoryPanel').classList.add('hidden');};
+window.showAttendanceCategory=function(key){ensureAdmin();if(!Object.hasOwn(categoryNames,key))return;activeCategory=key;document.getElementById('categoryPanel').classList.remove('hidden');updateAttendanceCategory();};
+function updateAttendanceCategory(){
+ if(!activeCategory||!adminAuthorized)return;
+ const rows=attendanceGroups[activeCategory]||[];
+ document.getElementById('categoryTitle').textContent=categoryNames[activeCategory]+' — '+rows.length;
+ document.getElementById('categoryList').innerHTML=rows.length?'<table class="w-full text-sm"><thead><tr><th>Аты-жөнү</th><th>Бөлүм</th><th>График</th><th>Каттоо</th><th>Айырма</th></tr></thead><tbody>'+rows.map(r=>'<tr class="border-t">'+[allPins[r.pin]?.name,allPins[r.pin]?.bolum,r.planned,r.actual,r.difference==null?'—':r.difference+' мүн.'].map(v=>'<td class="p-2">'+escapeHTML(v??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table>':'Маалымат жок';
+}
+function render() {
+  document.getElementById('deptCount').innerText = depts.length;
+
+  const sel = document.getElementById('deptInput');
+  const cur = sel.value;
+
+  sel.innerHTML = depts.map(d =>
+    `<option value="${escapeAttr(d)}">${escapeHTML(d)}</option>`
+  ).join('');
+
+  if (cur && depts.includes(cur)) sel.value = cur;
+  updateNewRoleOptions();
+  updateDeptScheduleOptions();
+
+  const statusByPin = currentWorkerStatusByPin();
+  const deptSet = new Set(depts);
+  const pins = Object.keys(allPins).filter(pin => allPins[pin] && typeof allPins[pin]==='object');
+  const discipline = dailyDiscipline(pins);
+  const groups = {working:[],late:discipline.late,early:discipline.early,lunchOut:[],lunchIn:[],absent:[],departed:[]};
+  const day=localDateString(Date.now());
+  const now=new Date();
+  for(const pin of pins){
+    const status=statusByPin[pin], log=allLogs[pin];
+    const {schedule}=scheduleFor(pin,allPins[pin],day);
+    if(status?.inside===true) groups.working.push({pin,actual:timeString(status.time)});
+    else if(discipline.arrived.has(pin)) groups.departed.push({pin,actual:status?timeString(status.time):''});
+    if(discipline.days[pin].absent) groups.absent.push({pin,planned:schedule.start});
+    if(discipline.days[pin].lunchEarly) groups.lunchOut.push({pin,planned:schedule.lunchS,actual:timeString(discipline.days[pin].lunchOut),difference:discipline.days[pin].lunchEarly});
+    if(discipline.days[pin].lunchLate) groups.lunchIn.push({pin,planned:schedule.lunchE,actual:timeString(discipline.days[pin].lunchIn),difference:discipline.days[pin].lunchLate});
+  }
+  attendanceGroups=groups;
+  const {working,late,lunchOut,lunchIn,early,absent}=Object.fromEntries(Object.entries(groups).map(([k,v])=>[k,v.length]));
+  document.getElementById('f_departed').textContent=groups.departed.length;
+  updateAttendanceCategory();
+  const outsideWorkers = outsideWorkersNow(statusByPin);
+  document.getElementById('f_outside').innerText = outsideWorkers.length;
+  if (!document.getElementById('outsidePanel').classList.contains('hidden')) updateOutsidePanel(outsideWorkers);
+  document.getElementById('f_working').innerText = working;
+  document.getElementById('f_late').innerText = late;
+  document.getElementById('f_lunchOut').innerText = lunchOut;
+  document.getElementById('f_lunchIn').innerText = lunchIn;
+  document.getElementById('f_early').innerText = early;
+  document.getElementById('f_absent').innerText = absent;
+
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  let html = '';
+
+  depts.filter(d => d.toLowerCase().includes(q)).forEach((d, i) => {
+    const deptPinKeys = Object.keys(allPins).filter(pin =>
+      allPins[pin] && allPins[pin].bolum === d
+    );
+    const total = deptPinKeys.length;
+    const inside = deptPinKeys.filter(pin => statusByPin[pin]?.inside === true).length;
+    const outside = total - inside;
+
+    html += `
+      <div class="bg-white rounded-xl p-3 card-shadow border-t-4 ${colors[i % colors.length]}">
+        <div class="flex justify-between gap-2">
+          <div class="font-bold text-[12px]">${escapeHTML(d.toUpperCase())}</div>
+          <button onclick="delDept('${escapeAttr(d)}')"
+            class="bg-red-50 text-red-600 w-6 h-6 rounded-full text-[11px]">✕</button>
+        </div>
+        <div onclick="filterDept('${escapeAttr(d)}')" class="cursor-pointer">
+          <div class="mt-2 text-[10px] text-gray-500">
+            ЖУМУШТА<br><b class="text-[20px]">${inside}</b>
+          </div>
+          <div class="flex gap-4 mt-1">
+            <div class="text-[10px]">СЫРТТА<br><b>${outside}</b></div>
+            <div class="text-[10px]">БАРДЫГЫ<br><b>${total}</b></div>
+          </div>
+        </div>
+        <button type="button" data-dept="${escapeAttr(d)}"
+          onclick="openDeptSchedule(this.dataset.dept)"
+          class="mt-3 w-full bg-blue-50 border border-blue-200 text-blue-700 rounded-lg px-3 py-2 text-[12px] font-bold hover:bg-blue-100">
+          📅 Иштөө графиги
+        </button>
+      </div>`;
+  });
+
+  html += `
+    <div class="border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-blue-600 bg-white cursor-pointer"
+      onclick="addDept()">
+      <span class="text-2xl">+</span>Бөлүм кошуу
+    </div>`;
+
+  document.getElementById('grid').innerHTML = html;
+
+  // PIN ИЗДӨӨ
+  const pq = (document.getElementById('pinSearch').value || '').toLowerCase();
+
+  let table = `
+    <tr class="bg-gray-50 text-[11px]">
+      <th class="p-2 text-left">Аты-жөнү</th>
+      <th class="p-2">Бөлүм</th>
+      <th class="p-2">Ролу</th>
+      <th class="p-2">PIN / График</th>
+      <th class="p-2">Телефон</th>
+      <th class="p-2">Аракет</th>
+    </tr>`;
+
+  let count = 0;
+
+  for (const pin in allPins) {
+    const v = allPins[pin];
+    if (!v) continue;
+
+    const searchText =
+      `${v.name || ''} ${v.bolum || ''} ${pin}`.toLowerCase();
+
+    if (pq && !searchText.includes(pq)) continue;
+
+    count++;
+
+    const config = workerSchedules[pin];
+    const schedule = config?.mode === 'custom' ? `${config.permanent.start}-${config.permanent.end} (жеке, жаңы)`
+      : config?.mode === 'inherit' ? 'Бөлүм графиги (жаңы)'
+      : v.schedule ? `${v.schedule.start || '08:00'}-${v.schedule.end || '17:00'} (PIN)` : '08:00-17:00';
+
+    const roleLabel = v.role === 'director' ? 'Директор'
+      : v.role === 'head' ? 'Бөлүм башчысы' : 'Кызматкер';
+    const currentRole = ['employee','head','director'].includes(v.role) ? v.role : 'employee';
+    const roleChoices = [['employee','Кызматкер'],['head','Бөлүм башчысы'],['director','Директор']]
+      .filter(([r]) => r === 'employee' || (v.bolum === 'Администрация' ? r === 'director' : r === 'head'))
+      .map(([r,label]) => `<option value="${r}" ${currentRole === r ? 'selected' : ''}>${label}</option>`).join('');
+
+    const phone = v.deviceId
+      ? `✅ Байланган<br>
+         <button onclick="resetPin('${escapeAttr(pin)}')"
+           class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[11px] mt-1">
+           🔄 Байланышты тазалоо
+         </button>`
+      : '❌ Байланган эмес';
+
+    table += `
+      <tr class="border-t">
+        <td class="p-2 font-medium">
+          <div>${escapeHTML(v.name || '')}</div>
+          <button type="button" data-edit-name-pin="${escapeAttr(pin)}" onclick="editPinName(this.dataset.editNamePin)"
+            class="mt-1 bg-blue-50 border border-blue-200 text-blue-700 rounded px-2 py-1 text-[11px]">✏️ Аты-жөнүн түзөтүү</button>
+        </td>
+        <td class="p-2">${escapeHTML(v.bolum || '')}</td>
+        <td class="p-2">
+          <div class="text-[11px] mb-1">${escapeHTML(roleLabel)}</div>
+          <select aria-label="${escapeAttr(v.name || pin)} ролу" data-role-pin="${escapeAttr(pin)}" class="border rounded p-1 text-[11px] bg-white">${roleChoices}</select>
+          <button type="button" data-save-role-pin="${escapeAttr(pin)}" onclick="savePinRole(this.dataset.saveRolePin)"
+            class="block mt-1 bg-blue-600 text-white px-2 py-1 rounded text-[11px]">💾 Ролду сактоо</button>
+        </td>
+        <td class="p-2">
+          <b>${escapeHTML(pin)}</b><br>
+          <span class="text-[10px] text-gray-500">${escapeHTML(schedule)}</span>
+        </td>
+        <td class="p-2 text-[11px]">${phone}</td>
+        <td class="p-2">
+          <button onclick="delPin('${escapeAttr(pin)}')"
+            class="text-red-500">🗑️ Өчүрүү</button>
+        </td>
+      </tr>`;
+  }
+
+  if (!count) {
+    table += '<tr><td colspan="6" class="p-3 text-center text-gray-400">Табылган жок</td></tr>';
+  }
+
+  document.getElementById('pinsTable').innerHTML = table;
+  document.getElementById('pinFound').innerText = count;
+  updateWorkerScheduleOptions();
+}
+
+
+// ЖАҢЫ ГРАФИК ЖӨНДӨӨЛӨРҮ: PIN маалыматтарын өзгөртпөй, өзүнчө сакталат.
+function scheduleForm(prefix, data) {
+  const base = data || defaultSchedule;
+  for (const [suffix,key] of [['Start','start'],['LunchS','lunchS'],['LunchE','lunchE'],['End','end']]) {
+    document.getElementById(prefix+suffix).value = base[key] || '';
+  }
+  document.querySelectorAll('#'+prefix+'Days input').forEach(el => {
+    el.checked = (base.workDays || []).includes(Number(el.value));
+  });
+}
+function readScheduleForm(prefix) {
+  const read = suffix => document.getElementById(prefix+suffix).value;
+  return {start:read('Start'),lunchS:read('LunchS'),lunchE:read('LunchE'),end:read('End'),
+    workDays:[...document.querySelectorAll('#'+prefix+'Days input:checked')].map(el=>Number(el.value)).sort()};
+}
+function validSchedule(data) {
+  return data.start && data.lunchS && data.lunchE && data.end &&
+    data.start < data.lunchS && data.lunchS <= data.lunchE && data.lunchE < data.end &&
+    data.workDays.length > 0;
+}
+function updateWorkerScheduleOptions() {
+  const select = document.getElementById('workerScheduleSelect');
+  const previous = select.value;
+  const entries = Object.entries(allPins).filter(([,v])=>v && typeof v==='object');
+  select.innerHTML = entries.map(([pin,v])=>`<option value="${escapeAttr(pin)}">${escapeHTML(v.name||'Аты жок')} — ${escapeHTML(v.bolum||'')} (${escapeHTML(pin)})</option>`).join('');
+  if (entries.some(([pin])=>pin===previous)) select.value = previous;
+  if (select.value !== select.dataset.loadedPin) showWorkerSchedule();
+}
+function showWorkerScheduleMode() {
+  const custom = document.getElementById('workerScheduleMode').value === 'custom';
+  document.getElementById('workerPermanentFields').classList.toggle('hidden',!custom);
+  document.getElementById('workerTempFields').classList.toggle('hidden',!document.getElementById('workerTempEnabled').checked);
+}
+function showWorkerSchedule() {
+  const select = document.getElementById('workerScheduleSelect');
+  const pin = select.value;
+  select.dataset.loadedPin = pin;
+  const worker = allPins[pin];
+  if (!worker) { document.getElementById('workerScheduleStatus').textContent='Кызматкер жок'; return; }
+  const config = workerSchedules[pin] || {};
+  const base = worker.schedule || effectiveDeptSchedule(worker.bolum);
+  document.getElementById('workerScheduleMode').value = config.mode || 'legacy';
+  scheduleForm('workerPermanent',config.permanent || base);
+  const temp = config.temporary;
+  document.getElementById('workerTempEnabled').checked = !!temp;
+  document.getElementById('workerTempFrom').value = temp?.from || '';
+  document.getElementById('workerTempTo').value = temp?.to || '';
+  scheduleForm('workerTemp',temp?.schedule || base);
+  showWorkerScheduleMode();
+  document.getElementById('workerScheduleStatus').textContent = config.mode
+    ? 'График жөндөөлөрү жүктөлдү (азырынча worker.html колдонбойт)'
+    : 'Мурдагы PIN графиги өзгөртүлгөн жок';
+}
+window.saveWorkerSchedule = async function() {
+  ensureAdmin();
+  const pin = document.getElementById('workerScheduleSelect').value;
+  if (!pin || !allPins[pin]) { alert('Кызматкерди тандаңыз'); return; }
+  const mode = document.getElementById('workerScheduleMode').value;
+  const config = {mode};
+  if (mode === 'custom') {
+    config.permanent = readScheduleForm('workerPermanent');
+    if (!validSchedule(config.permanent)) { alert('Туруктуу графикти туура толтуруңуз'); return; }
+  }
+  if (document.getElementById('workerTempEnabled').checked) {
+    const from = document.getElementById('workerTempFrom').value;
+    const to = document.getElementById('workerTempTo').value;
+    const schedule = readScheduleForm('workerTemp');
+    if (!from || !to || from > to || !validSchedule(schedule)) {
+      alert('Убактылуу графиктин күндөрүн жана убакыттарын туура толтуруңуз'); return;
+    }
+    config.temporary = {from,to,schedule};
+  }
+  try {
+    await db.ref('test/workerSchedules/'+pin).set(config);
+    document.getElementById('workerScheduleStatus').textContent = 'Жөндөөлөр Firebase базасына сакталды';
+    alert('Кызматкердин график жөндөөлөрү сакталды. worker.html азырынча эски график менен иштейт.');
+  } catch (error) { alert('Сактоо катасы: '+error.message); }
+};
+
+// Кызматкердин ролун өзгөртүү. Бир бөлүмдө бир гана жетекчи болот.
+// Бир эле Firebase транзакциясында текшерип, эски жетекчини кызматкерге түшүрөбүз.
+window.savePinRole = async function(pin) {
+  ensureAdmin();
+  const select = [...document.querySelectorAll('[data-role-pin]')]
+    .find(el => el.dataset.rolePin === String(pin));
+  if (!select || !allPins[pin]) return;
+  const role = select.value;
+  const person = allPins[pin];
+  const dept = person.bolum;
+  if (!['employee','head','director'].includes(role) ||
+      (role === 'director' && dept !== 'Администрация') ||
+      (role === 'head' && dept === 'Администрация')) {
+    alert('Директор Администрацияда гана, бөлүм башчысы башка бөлүмдөрдө гана болот.');
+    render();
+    return;
+  }
+  const leaderRole = dept === 'Администрация' ? 'director' : 'head';
+  const previousLeaders = Object.entries(allPins)
+    .filter(([otherPin, p]) => otherPin !== String(pin) && p?.bolum === dept && p.role === leaderRole);
+  if (role === leaderRole && previousLeaders.length) {
+    const oldNames = previousLeaders.map(([,p]) => p.name || 'Аты жок').join(', ');
+    if (!confirm(`Бул бөлүмдүн учурдагы жетекчиси: ${oldNames}. Аны «Кызматкер» кылып, ${person.name || pin} жетекчи болсунбу?`)) {
+      render(); return;
+    }
+  }
+  if (!confirm(`${person.name || pin} (PIN ${pin}) — «${role === 'director' ? 'Директор' : role === 'head' ? 'Бөлүм башчысы' : 'Кызматкер'}» ролун сактайсызбы?`)) {
+    render(); return;
+  }
+  const button = [...document.querySelectorAll('[data-save-role-pin]')]
+    .find(el => el.dataset.saveRolePin === String(pin));
+  if (button) button.disabled = true;
+  try {
+    const result = await db.ref('test/pins').transaction(pins => {
+      if (!pins || !pins[pin] || pins[pin].bolum !== dept) return;
+      if (role === leaderRole) {
+        for (const [otherPin, p] of Object.entries(pins)) {
+          if (otherPin !== String(pin) && p && p.bolum === dept && p.role === leaderRole) {
+            p.role = 'employee';
+          }
+        }
+      }
+      pins[pin].role = role;
+      return pins;
+    }, undefined, false);
+    if (!result.committed) throw new Error('Маалымат өзгөргөн же кызматкер табылган жок. Кайра аракет кылыңыз.');
+    alert('✅ Роль сакталды.');
+  } catch (error) {
+    alert('Ролду сактоо катасы: ' + error.message);
+    render();
+  } finally {
+    if (button) button.disabled = false;
+  }
+};
+
+// Кызматкердин аты-жөнүн гана өзгөртүү; PIN, телефон жана график сакталат.
+window.editPinName = async function(pin) {
+  ensureAdmin();
+  pin = String(pin);
+  const current = allPins[pin];
+  if (!current) { alert('Кызматкер табылган жок'); return; }
+  const previousName = String(current.name || '');
+  const answer = prompt('Кызматкердин туура аты-жөнүн жазыңыз:', previousName);
+  if (answer === null) return;
+  const newName = answer.trim().replace(/\s+/g, ' ');
+  if (!newName || newName.length > 150 || /[\u0000-\u001f\u007f]/.test(newName)) {
+    alert('Аты-жөнүн туура жазыңыз (1–150 белги).'); return;
+  }
+  if (newName === previousName) return;
+  if (!confirm('«' + previousName + '» → «' + newName + '» деп өзгөртөсүзбү?')) return;
+  const button = [...document.querySelectorAll('[data-edit-name-pin]')]
+    .find(el => el.dataset.editNamePin === pin);
+  if (button) button.disabled = true;
+  try {
+    // Транзакция бир гана name талаасына тийет жана параллелдүү өзгөрүүлөрдү текшерет.
+    const result = await db.ref('test/pins/' + pin + '/name').transaction(name => {
+      if (name !== previousName) return;
+      return newName;
+    }, undefined, false);
+    if (!result.committed) throw new Error('Аты-жөнү башка жерден өзгөргөн. Баракты жаңыртып, кайра аракет кылыңыз.');
+    alert('✅ Аты-жөнү сакталды.');
+  } catch (error) {
+    alert('Аты-жөнүн сактоо катасы: ' + error.message);
+  } finally {
+    if (button) button.disabled = false;
+  }
+};
+
+// ЖАҢЫ PIN ТҮЗҮҮ
+function updateNewRoleOptions() {
+  const dept = document.getElementById('deptInput').value;
+  const role = document.getElementById('roleInput');
+  const prior = role.value;
+  role.innerHTML = '<option value="employee">Кызматкер</option>' +
+    (dept === 'Администрация' ? '<option value="director">Директор</option>' : '<option value="head">Бөлүм башчысы</option>');
+  role.value = [...role.options].some(o => o.value === prior) ? prior : 'employee';
+}
+document.getElementById('deptInput').addEventListener('change', () => { fillNewWorkerSchedule(); updateNewRoleOptions(); });
+
+window.addWorker = async function() {
+  ensureAdmin();
+  const name = document.getElementById('nameInput').value.trim();
+  const bolum = document.getElementById('deptInput').value;
+  const role = document.getElementById('roleInput').value;
+  if (!['employee', 'head', 'director'].includes(role) ||
+      (role === 'director' && bolum !== 'Администрация') ||
+      (role === 'head' && bolum === 'Администрация')) {
+    alert('Директор Администрацияда гана, бөлүм башчысы башка бөлүмдөрдө гана болот.');
+    return;
+  }
+  if (role !== 'employee' && Object.values(allPins).some(p => p?.bolum === bolum && p.role === role)) {
+    alert('Бул бөлүмдө жетекчи дайындалган. Жаңы PINди «Кызматкер» катары түзүп, андан кийин ролун өзгөртүңүз.');
+    return;
+  }
+
+  const appliedSchedule = effectiveDeptSchedule(bolum);
+  const s1 = document.getElementById('s1').value;
+  const s2 = document.getElementById('s2').value;
+  const s3 = document.getElementById('s3').value;
+  const s4 = document.getElementById('s4').value;
+
+  if (!name) {
+    alert('Кызматкердин аты-жөнүн жазыңыз');
+    return;
+  }
+
+  if (!s1 || !s2 || !s3 || !s4) {
+    alert('Бардык иш убакыттарын толтуруңуз');
+    return;
+  }
+
+  if (!(s1 < s2 && s2 <= s3 && s3 < s4)) {
+    alert('Иш графигинин убакыттарын туура текшериңиз');
+    return;
+  }
+
+  let pin;
+  for (let i = 0; i < 20; i++) {
+    pin = String(Math.floor(1000 + Math.random() * 9000));
+    const snap = await db.ref('test/pins/' + pin).get();
+    if (!snap.exists()) break;
+    pin = null;
+  }
+
+  if (!pin) {
+    alert('PIN түзүү ишке ашкан жок. Кайра аракет кылыңыз.');
+    return;
+  }
+
+  const deptIndex = depts.indexOf(bolum);
+
+  try {
+    const newPinData = {
+      name: name, bolum: bolum, role: role,
+      deptId: String(deptIndex >= 0 ? deptIndex + 1 : 1),
+      schedule: {start:s1, lunchS:s2, lunchE:s3, end:s4, workDays:[...appliedSchedule.workDays]},
+      deviceId: null
+    };
+    const result = await db.ref('test/pins').transaction(pins => {
+      pins = pins || {};
+      if (pins[pin]) return;
+      if (role !== 'employee' && Object.values(pins).some(p => p?.bolum === bolum && p.role === role)) return;
+      pins[pin] = newPinData;
+      return pins;
+    }, undefined, false);
+    if (!result.committed) throw new Error('PIN же бөлүмдүн жетекчиси мурунтан бар. Кайра аракет кылыңыз.');
+
+    document.getElementById('nameInput').value = '';
+    document.getElementById('roleInput').value = 'employee';
+    alert('✅ PIN түзүлдү: ' + pin + '\nКызматкерге PIN-кодду бериңиз.');
+  } catch (error) {
+    alert('PIN сакталган жок: ' + error.message);
+  }
+};
+
+// PIN ӨЧҮРҮҮ
+window.delPin = async function(pin) {
+  ensureAdmin();
+  if (!confirm(pin + ' PIN-кодун өчүрөсүзбү?')) return;
+
+  try {
+    await db.ref('osh').update({['pins/'+pin]:null,['workerSchedules/'+pin]:null});
+    alert('PIN өчүрүлдү');
+  } catch (error) {
+    alert('Өчүрүү катасы: ' + error.message);
+  }
+};
+
+// ТЕЛЕФОНГО БАЙЛАНЫШТЫ ТАЗАЛОО
+window.resetPin = async function(pin) {
+  ensureAdmin();
+  if (!confirm(
+    pin + ' PIN-кодунун телефон байланышын тазалайсызбы?'
+  )) return;
+
+  try {
+    await db.ref('test/pins/' + pin).update({
+      deviceId: null,
+      lastSeen: null
+    });
+    alert('Телефон байланышы тазаланды');
+  } catch (error) {
+    alert('Ката: ' + error.message);
+  }
+};
+
+// Бөлүмдөр Firebase'де сакталат. PIN жазууларына тийбейбиз.
+window.delDept = async function(dept) {
+  ensureAdmin();
+  if (!confirm('"' + dept + '" бөлүмүн тизмеден өчүрөсүзбү? PIN-коддор өчүрүлбөйт.')) return;
+  try {
+    const result = await db.ref('test/departments').transaction(current => {
+      if (!current || typeof current !== 'object') return;
+      const next = Array.isArray(current) ? [...current] : {...current};
+      for (const key of Object.keys(next)) {
+        const item = next[key];
+        if ((typeof item === 'string' ? item : item?.name) === dept) {
+          if (Array.isArray(next)) delete next[key]; else delete next[key];
+        }
+      }
+      return next;
+    }, undefined, false);
+    if (!result.committed) throw new Error('Бөлүмдөрдүн тизмеси жаңырган жок');
+  } catch (error) { alert('Өчүрүү катасы: ' + error.message); }
+};
+
+window.addDept = async function() {
+  ensureAdmin();
+  const name = prompt('Жаңы бөлүмдүн атын жазыңыз:')?.trim();
+  if (!name) return;
+  if (depts.includes(name)) { alert('Бул бөлүм бар'); return; }
+  try {
+    const result = await db.ref('test/departments').transaction(current => {
+      const next = current && typeof current === 'object'
+        ? (Array.isArray(current) ? [...current] : {...current}) : {};
+      if (departmentNames(next).includes(name)) return;
+      const numericKeys = Object.keys(next).filter(k => /^\d+$/.test(k)).map(Number);
+      const nextKey = String(Math.max(0, ...numericKeys) + 1);
+      next[nextKey] = {id: Number(nextKey), name};
+      return next;
+    }, undefined, false);
+    if (!result.committed) alert('Бөлүм буга чейин кошулган же сактоо токтотулган');
+  } catch (error) { alert('Кошуу катасы: ' + error.message); }
+};
+
+window.filterDept = function(dept) {
+  ensureAdmin();
+  location.href = 'dept.html?d=' +
+    encodeURIComponent(dept) + '&v=1105';
+};
+
+// Тандалган бөлүмдүн графигин өзүнчө барактан башкаруу.
+window.openDeptSchedule = function(dept) {
+  ensureAdmin();
+  if (!depts.includes(dept)) return;
+  location.href = 'schedule.html?d=' + encodeURIComponent(dept) + '&v=2';
+};
+
+window.copyWorkerLink = async function() {
+  const link = 'https://imatali.github.io/kadamjay-pwa-test/worker.html?v=445';
+
+  try {
+    await navigator.clipboard.writeText(link);
+    alert('Шилтеме көчүрүлдү');
+  } catch (error) {
+    prompt('Шилтемени көчүрүңүз:', link);
+  }
+};
+
+// КЕЛҮҮ-КЕТҮҮ ТАРЫХЫ
+window.renderAttendance = function() {
+  const date = document.getElementById('attendanceDate').value;
+  const query = document.getElementById('attendanceSearch')
+    .value.trim().toLowerCase();
+  const type = document.getElementById('attendanceType').value;
+
+  const events = Object.entries(allAttendance)
+    .map(([id, item]) => ({ id, ...item }))
+    .filter(item => {
+      if (!item || !Number.isFinite(Number(item.time))) return false;
+
+      if (localDateString(Number(item.time)) !== date) return false;
+      if (type && item.type !== type) return false;
+
+      const text = [
+        item.name || '',
+        item.pin || '',
+        item.bolum || ''
+      ].join(' ').toLowerCase();
+
+      return text.includes(query);
+    })
+    .sort((a, b) => Number(b.time) - Number(a.time));
+
+  document.getElementById('attendanceCount').innerText = events.length;
+  document.getElementById('attendanceIn').innerText =
+    events.filter(x => x.type === 'in').length;
+  document.getElementById('attendanceOut').innerText =
+    events.filter(x => x.type === 'out').length;
+
+  const tbody = document.getElementById('attendanceTable');
+
+  if (!events.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="p-4 text-center text-gray-400">
+          Бул күнгө окуя табылган жок
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = events.map(item => {
+    const timestamp = Number(item.time);
+    const time = timeString(timestamp);
+
+    const eventName = item.type === 'in'
+      ? '<span class="text-emerald-700 font-semibold">🟢 Келди</span>'
+      : item.type === 'out'
+        ? '<span class="text-red-600 font-semibold">🔴 Кетти</span>'
+        : item.type==='lunch_out'?'Обедке кетти':item.type==='lunch_in'?'Обедден келди':'Белгисиз';
+
+    let gps = 'GPS жок';
+
+    if (
+      Number.isFinite(Number(item.lat)) &&
+      Number.isFinite(Number(item.lng)) &&
+      item.lat !== null &&
+      item.lng !== null
+    ) {
+      const lat = Number(item.lat);
+      const lng = Number(item.lng);
+
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        const mapUrl = 'https://www.google.com/maps?q=' +
+          encodeURIComponent(lat + ',' + lng);
+
+        gps = `<a class="text-blue-600 underline"
+          target="_blank" rel="noopener noreferrer"
+          href="${mapUrl}">Картаны ачуу</a>`;
+      }
+    }
+
+    return `
+      <tr class="border-t">
+        <td class="p-2 whitespace-nowrap">${escapeHTML(time)}</td>
+        <td class="p-2">${escapeHTML(item.name || '')}</td>
+        <td class="p-2">${escapeHTML(item.bolum || '')}</td>
+        <td class="p-2">${escapeHTML(item.pin || '')}</td>
+        <td class="p-2 whitespace-nowrap">${eventName}</td>
+        <td class="p-2 whitespace-nowrap">${gps}</td>
+      </tr>`;
+  }).join('');
+};
+
+document.getElementById('attendanceSearch')
+  .addEventListener('input', renderAttendance);
+
+document.getElementById('attendanceDate')
+  .addEventListener('change', renderAttendance);
+
+document.getElementById('attendanceType')
+  .addEventListener('change', renderAttendance);
+
+</script>
+</body>
+</html>
